@@ -47,7 +47,7 @@ class PostScraper:
         }
 
         params = {
-            'id': post_id
+            'ids': f'{post_id}'
         }
 
         response = requests.get(POSTS_API_URL, headers=headers, params=params)
