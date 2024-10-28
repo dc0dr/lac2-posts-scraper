@@ -83,6 +83,11 @@ class PostScraper:
 
         return extracted_post_ids
 
+    def contains_keyword(content, keywords):
+        """checks if any keyword is present in the content"""
+        pattern = '|'.join(rf'\b{k}\b' for k in keywords)
+        return re.search(pattern, content, re.IGNORECASE)
+    
     post_links = get_post_links(ACCESS_TOKEN, ORGANIZATION_ID)
 
     
