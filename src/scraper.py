@@ -17,8 +17,20 @@ FEED_CONTENT_API_URL='https://api.linkedin.com/rest/dmaFeedContentsExternal'
 POSTS_API_URL='https://api.linkedin.com/rest/dmaPosts'
 
 class PostScraper:
-    
+
+    # Path to the Excel file
     file_path = 'files\\LAC2_LinkedIn_Posts.xlsx'
+
+    # Keywords for categorizing posts
+    events_keywords = ['event', 'conference', 'summit', 'symposium', 'workshop']
+    breakfast_keywords = ['breakfast', 'morning session', 'brunch']
+    interview_keywords = ['interview', 'conversation', 'discussion', 'talk', 'chat']
+
+    # Lists to store new links
+    ai_events_links = []
+    ai_breakfasts_links = []
+    ai_interviews_links = []
+    uncategorized = []
 
     def get_post_links(access_token, organization_id):
         headers = {
