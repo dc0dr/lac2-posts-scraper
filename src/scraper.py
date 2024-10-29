@@ -1,5 +1,4 @@
 import re
-import pandas as pd 
 import requests
 
 FEED_CONTENT_API_URL='https://api.linkedin.com/rest/dmaFeedContentsExternal'
@@ -75,4 +74,3 @@ class PostScraper:
         pattern = '|'.join(rf'\b{k}\b' for k in keywords)
         return re.search(pattern, content, re.IGNORECASE)
     
-
