@@ -14,7 +14,7 @@ class PostScraper:
 
         params = {
             'author': f'urn:li:organization:{organization_id}',
-            'maxPaginationCount': '20',
+            'maxPaginationCount': '150',
             'q': 'postsByAuthor'
         }
 
