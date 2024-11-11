@@ -1,19 +1,24 @@
 import os
-from transformers import pipeline
+import ollama
 from rich.console import Console
 
-os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 console = Console()
 
-#Load the summarizer pipeline
-summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
 
 class Summarizer:
     def __init__(self):
         pass
 
     def generate_summary(self, post_content):
-        # Generate a summary of the post content
-        summary = summarizer(post_content, do_sample=False)
-        return summary[0]['summary_text']
+        
+        #Load the summarizer pipeline
+        summary = ollama.chat(model='llama3.2', messages=[
+            {
+                'role': 'user',
+                'content': f'Summarize this post concisely and result you give me must be nothing but the summarized post: {post_content}'
+            }
+        ])
+        
+        # Generate a summary of the post content 
+        return summary['message']['content']
