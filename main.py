@@ -22,16 +22,13 @@ file_path = 'files\\LAC2_LinkedIn_Posts.xlsx'
 events_keywords = ['event', 'conference', 'summit', 'symposium', 'workshop']
 breakfast_keywords = ['breakfast', 'morning session', 'brunch']
 interview_keywords = ['interview', 'conversation', 'discussion', 'talk', 'chat']
+tech_talks_keywords = ['tech talks', 'tech talk', 'tech session', 'tech discussion', 'tech chat']
 
 # Lists to store new links
-ai_events_links = []
-ai_events_descriptions = []
-ai_breakfasts_links = []
-ai_breakfasts_descriptions = []
-ai_interviews_links = []
-ai_interviews_descriptions = []
-uncategorized = []
-uncategorized_descriptions = []
+dates = []
+descriptions = []
+categories = []
+links = []
 
 
 if __name__ == "__main__":
@@ -51,9 +48,10 @@ if __name__ == "__main__":
         post_id = id['id']
         commentary = post_content['results'][post_id]['commentary']
         summary = summarizer.generate_summary(commentary)
+        summary = summary.strip('"')
         epoch_time = post_content['results'][post_id]['publishedAt']
         date_time = datetime.fromtimestamp(epoch_time / 1000).strftime('%Y-%m-%d')
-        console.log(f'Post URL: {post["url"]}\nPublished At: {date_time}\nSummary: {summary}')
+        # console.log(f'Post URL: {post["url"]}\nPublished At: {date_time}\nSummary: {summary}')
 
         try:
             content = commentary.lower()
@@ -61,102 +59,62 @@ if __name__ == "__main__":
             
             # Categorize each post link based on keywords and post content
             if scraper.contains_keyword(content, breakfast_keywords):
-                ai_breakfasts_links.append(f'=HYPERLINK("{post["url"]}", "{date_time}")')
-                ai_breakfasts_descriptions.append(summary)
-                ai_events_links.append('')
-                ai_events_descriptions.append('')
-                ai_interviews_links.append('')
-                ai_interviews_descriptions.append('')
-                uncategorized.append('')
-                uncategorized_descriptions.append('')
+                category = "AI Breakfast"
             elif scraper.contains_keyword(content, interview_keywords):
-                ai_breakfasts_links.append('')
-                ai_breakfasts_descriptions.append('')
-                ai_events_links.append('')
-                ai_events_descriptions.append('')
-                ai_interviews_links.append(f'=HYPERLINK("{post["url"]}", "{date_time}")')
-                ai_interviews_descriptions.append(summary)
-                uncategorized.append('')
-                uncategorized_descriptions.append('')
+                category = "AI Interview"
             elif scraper.contains_keyword(content, events_keywords):
-                ai_breakfasts_links.append('')
-                ai_breakfasts_descriptions.append('')
-                ai_events_links.append(f'=HYPERLINK("{post["url"]}", "{date_time}")')
-                ai_events_descriptions.append(summary)
-                ai_interviews_links.append('')
-                ai_interviews_descriptions.append('')
-                uncategorized.append('')
-                uncategorized_descriptions.append('')
+                category = "AI Event"
+            elif scraper.contains_keyword(content, tech_talks_keywords):
+                category = "Tech Talks"
             else:
-                ai_breakfasts_links.append('')
-                ai_breakfasts_descriptions.append('')
-                ai_events_links.append('')
-                ai_events_descriptions.append('')
-                ai_interviews_links.append('')
-                ai_interviews_descriptions.append('')
-                uncategorized.append(f'=HYPERLINK("{post["url"]}", "{date_time}")')
-                uncategorized_descriptions.append(summary)
+                category = "Uncategorized"
+
+            # Append data to lists
+            dates.append(date_time)
+            descriptions.append(summary)
+            categories.append(category)
+            links.append(post["url"])
+
+            console.log(f'Post URL: {post["url"]}\nDate: {date_time}\nCategory: {category}\nSummary: {summary}')
+            
         except Exception as e:
             console.log(f"Error parsing post: {e}")
+
+    # Create new DataFrame with the new structure
+    new_data = pd.DataFrame({
+        'Date': dates,
+        'Event Description (Generated with AI)': descriptions,
+        'Category': categories,
+        'Link to Post': links
+    })
 
     # Check if the Excel file already exists
     if os.path.exists(file_path):
         console.log('\nExcel file found. Updating the file...')
         existing_df = pd.read_excel(file_path)
+
+        existing_links = set(existing_df['Link to Post'].dropna().values)
+
+        new_data = new_data[~new_data['Link to Post'].isin(existing_links)]
+
+        updated_df = pd.concat([existing_df, new_data], axis=0)
     else:
         console.log('\nCreating new Excel file...')
-        existing_df = pd.DataFrame(columns=[
-            'AI Breakfasts', 'Description (Breakfasts)', 
-            'AI Events', 'Description (AI Events)', 
-            'AI Interviews', 'Description (AI Interviews)', 
-            'Uncategorized', 'Description (Uncategorized)'
-        ])
+        updated_df = new_data
 
-    # Filter out duplicates for each category
-    filtered_ai_events_links = categorizer.filter_new_links(ai_events_links, existing_df['AI Events'].dropna().values)
-    filtered_ai_events_descriptions = categorizer.filter_new_links(ai_events_descriptions, existing_df['Description (Breakfasts)'].dropna().values)
-    filtered_ai_breakfasts_links = categorizer.filter_new_links(ai_breakfasts_links, existing_df['AI Breakfasts'].dropna().values)
-    filtered_ai_breakfasts_descriptions = categorizer.filter_new_links(ai_breakfasts_descriptions, existing_df['Description (AI Events)'].dropna().values)
-    filtered_ai_interviews_links = categorizer.filter_new_links(ai_interviews_links, existing_df['AI Interviews'].dropna().values)
-    filtered_ai_interviews_descriptions = categorizer.filter_new_links(ai_interviews_descriptions, existing_df['Description (AI Interviews)'].dropna().values)
-    filtered_uncategorized = categorizer.filter_new_links(uncategorized, existing_df['Uncategorized'].dropna().values)
-    filtered_uncategorized_descriptions = categorizer.filter_new_links(uncategorized_descriptions, existing_df['Description (Uncategorized)'].dropna().values)
-    
-    # Fill in the missing values to make the lists equal in length
-    max_length = max(len(filtered_ai_events_links), len(filtered_ai_breakfasts_links), 
-                        len(filtered_ai_interviews_links), len(filtered_uncategorized))
-    filtered_ai_events_links.extend([''] * (max_length - len(filtered_ai_events_links)))
-    filtered_ai_events_descriptions.extend([''] * (max_length - len(filtered_ai_events_descriptions)))
-    filtered_ai_breakfasts_links.extend([''] * (max_length - len(filtered_ai_breakfasts_links)))
-    filtered_ai_breakfasts_descriptions.extend([''] * (max_length - len(filtered_ai_breakfasts_descriptions)))
-    filtered_ai_interviews_links.extend([''] * (max_length - len(filtered_ai_interviews_links)))
-    filtered_ai_interviews_descriptions.extend([''] * (max_length - len(filtered_ai_interviews_descriptions)))
-    filtered_uncategorized.extend([''] * (max_length - len(filtered_uncategorized)))
-    filtered_uncategorized_descriptions.extend([''] * (max_length - len(filtered_uncategorized_descriptions)))
 
-    # Create the DataFrame with the updated format
-    new_data = pd.DataFrame({
-        'AI Breakfasts': filtered_ai_breakfasts_links,
-        'Description (Breakfasts)': filtered_ai_breakfasts_descriptions,
-        # 'Empty 1': [''] * max_length,  # Empty column
-        'AI Events': filtered_ai_events_links,
-        'Description (AI Events)': filtered_ai_events_descriptions,
-        # 'Empty 2': [''] * max_length,  # Empty column
-        'AI Interviews': filtered_ai_interviews_links,
-        'Description (AI Interviews)': filtered_ai_interviews_descriptions,
-        # 'Empty 3': [''] * max_length,  # Empty column
-        'Uncategorized': filtered_uncategorized,
-        'Description (Uncategorized)': filtered_uncategorized_descriptions
-    })
+    updated_df['Date'] = pd.to_datetime(updated_df['Date']).dt.strftime('%Y-%m-%d')
+    updated_df = updated_df.sort_values(by='Date', ascending=False)
+    updated_df = updated_df.drop_duplicates(subset='Link to Post', keep='first')
 
-    existing_df = existing_df.loc[~existing_df.index.duplicated(keep='first')]
-    new_data = new_data.loc[~new_data.index.duplicated(keep='first')]
+    updated_df['Link to Post'] = updated_df.apply(
+        lambda row: f'=HYPERLINK("{row["Link to Post"]}")',
+        axis=1
+    )
 
-    # Append and save to excel file
-    updated_df = pd.concat([existing_df, new_data], ignore_index=True)
-    updated_df.to_excel(file_path, index=False, engine="xlsxwriter")
+    # Save to Excel
+    with pd.ExcelWriter(file_path, engine='xlsxwriter') as writer:
+        updated_df.to_excel(writer, index=False, sheet_name='Posts Sheet')
 
-    console.log('Excel file updated successfully!')
-    
-    
+    console.log('Excel file updated successfully')
                                         
