@@ -1,6 +1,5 @@
 import os
 from src.scraper import PostScraper
-from src.excel_filter import ExcelCategorizer
 from src.post_descriptor import Summarizer
 from datetime import datetime
 import pandas as pd
@@ -33,7 +32,6 @@ links = []
 
 if __name__ == "__main__":
     scraper = PostScraper()
-    categorizer = ExcelCategorizer()
     summarizer = Summarizer()
 
     post_links = scraper.get_post_links(ACCESS_TOKEN, ORGANIZATION_ID)
