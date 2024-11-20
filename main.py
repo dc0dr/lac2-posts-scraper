@@ -116,5 +116,15 @@ if __name__ == "__main__":
     with pd.ExcelWriter(file_path, engine='xlsxwriter') as writer:
         updated_df.to_excel(writer, index=False, sheet_name='Posts Sheet')
 
+        # Auto-adjust colunm widths
+        worksheet = writer.sheets['Posts Sheet']
+        for idx, col in enumerate(updated_df.columns):
+            series = updated_df[col]
+            max_len = max(
+                series.astype(str).map(len).max(),
+                len(str(series.name))
+            )
+            worksheet.set_column(idx, idx, max_len)
+
     console.log('Excel file updated successfully')
                                         
